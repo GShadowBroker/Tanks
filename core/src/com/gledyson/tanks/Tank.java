@@ -3,6 +3,7 @@ package com.gledyson.tanks;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 
@@ -80,11 +81,14 @@ public abstract class Tank {
         );
     }
 
-    public void fire(Sound shotSound) {
+    public void fire(Tank tank, Sound shotSound) {
+
+        float xOffset = MathUtils.sinDeg(-tank.getTankAngle()) * (tank.getWidth() / 2);
+        float yOffset = MathUtils.cosDeg(-tank.getTankAngle()) * (tank.getHeight() / 2);
 
         Shot newShot = new Shot(
-                boundingBox.x + (boundingBox.width / 2),
-                boundingBox.y + (boundingBox.width / 2),
+                boundingBox.x + (boundingBox.width / 2) - xOffset,
+                boundingBox.y + (boundingBox.width / 2) + yOffset,
                 shotWidth, shotHeight,
                 shotTexture,
                 shotSpeed,
@@ -194,5 +198,29 @@ public abstract class Tank {
 
     public void setReverseSpeed(float reverseSpeed) {
         this.reverseSpeed = reverseSpeed;
+    }
+
+    public TextureRegion getTankTexture() {
+        return tankTexture;
+    }
+
+    public TextureRegion getShotTexture() {
+        return shotTexture;
+    }
+
+    public float getShotSpeed() {
+        return shotSpeed;
+    }
+
+    public float getShotRate() {
+        return shotRate;
+    }
+
+    public float getElapsedTimeSinceLastShot() {
+        return elapsedTimeSinceLastShot;
+    }
+
+    public void setElapsedTimeSinceLastShot(float elapsedTimeSinceLastShot) {
+        this.elapsedTimeSinceLastShot = elapsedTimeSinceLastShot;
     }
 }

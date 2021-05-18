@@ -1,48 +1,195 @@
 
 textures.png
-size: 256, 64
+size: 1024, 128
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
+explosion1
+  rotate: false
+  xy: 508, 68
+  size: 60, 60
+  orig: 60, 60
+  offset: 0, 0
+  index: -1
+explosion2
+  rotate: false
+  xy: 568, 72
+  size: 57, 56
+  orig: 57, 56
+  offset: 0, 0
+  index: -1
+explosion3
+  rotate: false
+  xy: 384, 65
+  size: 64, 63
+  orig: 64, 63
+  offset: 0, 0
+  index: -1
+explosion4
+  rotate: false
+  xy: 788, 83
+  size: 46, 45
+  orig: 46, 45
+  offset: 0, 0
+  index: -1
+explosion5
+  rotate: false
+  xy: 682, 76
+  size: 53, 52
+  orig: 53, 52
+  offset: 0, 0
+  index: -1
+explosionSmoke1
+  rotate: false
+  xy: 448, 68
+  size: 60, 60
+  orig: 60, 60
+  offset: 0, 0
+  index: -1
+explosionSmoke2
+  rotate: false
+  xy: 625, 72
+  size: 57, 56
+  orig: 57, 56
+  offset: 0, 0
+  index: -1
+explosionSmoke3
+  rotate: false
+  xy: 384, 2
+  size: 63, 63
+  orig: 63, 63
+  offset: 0, 0
+  index: -1
+explosionSmoke4
+  rotate: false
+  xy: 0, 3
+  size: 46, 45
+  orig: 46, 45
+  offset: 0, 0
+  index: -1
+explosionSmoke5
+  rotate: false
+  xy: 735, 76
+  size: 53, 52
+  orig: 53, 52
+  offset: 0, 0
+  index: -1
+flatDark23
+  rotate: false
+  xy: 160, 48
+  size: 80, 80
+  orig: 80, 80
+  offset: 0, 0
+  index: -1
+flatDark24
+  rotate: false
+  xy: 0, 48
+  size: 80, 80
+  orig: 80, 80
+  offset: 0, 0
+  index: -1
+flatDark25
+  rotate: false
+  xy: 240, 48
+  size: 80, 80
+  orig: 80, 80
+  offset: 0, 0
+  index: -1
+flatDark26
+  rotate: false
+  xy: 80, 48
+  size: 80, 80
+  orig: 80, 80
+  offset: 0, 0
+  index: -1
+shotLarge
+  rotate: false
+  xy: 934, 103
+  size: 20, 25
+  orig: 20, 25
+  offset: 0, 0
+  index: -1
+shotOrange
+  rotate: false
+  xy: 180, 20
+  size: 16, 28
+  orig: 16, 28
+  offset: 0, 0
+  index: -1
 shotRed
   rotate: false
-  xy: 208, 26
+  xy: 913, 90
   size: 21, 38
   orig: 21, 38
   offset: 0, 0
   index: -1
 shotThin
   rotate: false
-  xy: 229, 38
+  xy: 208, 22
   size: 8, 26
   orig: 8, 26
   offset: 0, 0
   index: -1
+tankBlue_barrel2_outline
+  rotate: false
+  xy: 196, 18
+  size: 12, 30
+  orig: 12, 30
+  offset: 0, 0
+  index: -1
+tankBody_blue_outline
+  rotate: false
+  xy: 834, 86
+  size: 42, 42
+  orig: 42, 42
+  offset: 0, 0
+  index: -1
+tankBody_red_outline
+  rotate: false
+  xy: 126, 8
+  size: 38, 40
+  orig: 38, 40
+  offset: 0, 0
+  index: -1
+tankRed_barrel1_outline
+  rotate: false
+  xy: 164, 18
+  size: 16, 30
+  orig: 16, 30
+  offset: 0, 0
+  index: -1
 tank_blue
   rotate: false
-  xy: 128, 18
+  xy: 46, 2
   size: 42, 46
   orig: 42, 46
   offset: 0, 0
   index: -1
 tank_red
   rotate: false
-  xy: 170, 18
+  xy: 88, 2
   size: 38, 46
   orig: 38, 46
   offset: 0, 0
   index: -1
 tileGrass1
   rotate: false
-  xy: 64, 0
+  xy: 320, 0
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: -1
 tileGrass2
   rotate: false
-  xy: 0, 0
+  xy: 320, 64
   size: 64, 64
   orig: 64, 64
+  offset: 0, 0
+  index: -1
+tracksSmall
+  rotate: false
+  xy: 876, 76
+  size: 37, 52
+  orig: 37, 52
   offset: 0, 0
   index: -1

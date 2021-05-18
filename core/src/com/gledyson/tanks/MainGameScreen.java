@@ -18,6 +18,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class MainGameScreen implements Screen {
     private final TanksGame game;
+    private final Controller controller;
 
     private final OrthographicCamera camera;
     private final OrthographicCamera hudCamera;
@@ -89,6 +90,7 @@ public class MainGameScreen implements Screen {
 
         // Init
         collisionBox = new Rectangle();
+        controller = new Controller(game, textureAtlas);
     }
 
     @Override
@@ -109,6 +111,9 @@ public class MainGameScreen implements Screen {
         // Timers
         timeSincePaused += delta;
 
+        // Draw controllers
+//        controller.draw();
+
         // player input
         handlePlayerInput(delta);
 
@@ -120,7 +125,7 @@ public class MainGameScreen implements Screen {
         enemyTank.draw(game.batch);
 
         if (enemyTank.canFire()) {
-            enemyTank.fire(shotSound);
+            enemyTank.fire(enemyTank, shotSound);
         }
 
         // Draw shots
@@ -138,7 +143,8 @@ public class MainGameScreen implements Screen {
 
         game.batch.end();
 
-
+        // render controller
+        controller.draw();
     }
 
     private void evaluateCollisions() {
@@ -172,17 +178,9 @@ public class MainGameScreen implements Screen {
         while (iterator.hasNext()) {
             Shot shot = iterator.next();
             shot.draw(game.batch);
-
-            // move based on angle
-            float shotX = shot.getPositionX();
-            float shotY = shot.getPositionY();
-
-            float angle = shot.getAngle();
-            float speed = shot.getSpeed();
-
             shot.updatePosition(
-                    shotX + MathUtils.sinDeg(-angle) * speed * deltaTime,
-                    shotY + MathUtils.cosDeg(-angle) * speed * deltaTime
+                    shot.getPositionX() + MathUtils.sinDeg(-shot.getAngle()) * shot.getSpeed() * deltaTime,
+                    shot.getPositionY() + MathUtils.cosDeg(-shot.getAngle()) * shot.getSpeed() * deltaTime
             );
 
             int threshold = 64;
@@ -206,7 +204,7 @@ public class MainGameScreen implements Screen {
             game.setScreen(new PauseScreen(game, this));
         }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.A) || controller.isLeftPressed()) {
 
             // clockwise
             float finalAngle = currentAngle + rotationRate * delta;
@@ -219,7 +217,7 @@ public class MainGameScreen implements Screen {
 
             playerTank.setTankAngle(finalAngle);
 
-        } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+        } else if (Gdx.input.isKeyPressed(Input.Keys.D) || controller.isRightPressed()) {
 
             // counter-clockwise
             float finalAngle = currentAngle - rotationRate * delta;
@@ -233,15 +231,15 @@ public class MainGameScreen implements Screen {
             playerTank.setTankAngle(finalAngle);
         }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            float posY = playerTank.getPositionY();
-            float posX = playerTank.getPositionX();
-            float speed = playerTank.getSpeed();
-            float angle = playerTank.getTankAngle();
+        if (Gdx.input.isKeyPressed(Input.Keys.W) || controller.isUpPressed()) {
+            float newPosX = playerTank.getPositionX() - playerTank.getSpeed() * MathUtils.sinDeg(-playerTank.getTankAngle()) * delta;
+            float newPosY = playerTank.getPositionY() - playerTank.getSpeed() * MathUtils.cosDeg(-playerTank.getTankAngle()) * delta;
 
-            float newPosX = posX - speed * MathUtils.sinDeg(-angle) * delta;
-            float newPosY = posY - speed * MathUtils.cosDeg(-angle) * delta;
-            collisionBox.set(newPosX, newPosY, playerTank.getWidth(), playerTank.getHeight());
+            collisionBox.set(
+                    newPosX,
+                    newPosY,
+                    playerTank.getWidth(),
+                    playerTank.getHeight());
 
             if (!collisionBox.overlaps(enemyTank.getBoundingBox())) {
                 playerTank.updatePosition(newPosX, newPosY);
@@ -251,16 +249,15 @@ public class MainGameScreen implements Screen {
                 }
             }
 
-        } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+        } else if (Gdx.input.isKeyPressed(Input.Keys.S) || controller.isDownPressed()) {
+            float newPosX = playerTank.getPositionX() + playerTank.getReverseSpeed() * MathUtils.sinDeg(-playerTank.getTankAngle()) * delta;
+            float newPosY = playerTank.getPositionY() + playerTank.getReverseSpeed() * MathUtils.cosDeg(-playerTank.getTankAngle()) * delta;
 
-            float posY = playerTank.getPositionY();
-            float posX = playerTank.getPositionX();
-            float reverseSpeed = playerTank.getReverseSpeed();
-            float angle = playerTank.getTankAngle();
-
-            float newPosX = posX + reverseSpeed * MathUtils.sinDeg(-angle) * delta;
-            float newPosY = posY + reverseSpeed * MathUtils.cosDeg(-angle) * delta;
-            collisionBox.set(newPosX, newPosY, playerTank.getWidth(), playerTank.getHeight());
+            collisionBox.set(
+                    newPosX,
+                    newPosY,
+                    playerTank.getWidth(),
+                    playerTank.getHeight());
 
             if (!collisionBox.overlaps(enemyTank.getBoundingBox())) {
                 playerTank.updatePosition(newPosX, newPosY);
@@ -288,7 +285,7 @@ public class MainGameScreen implements Screen {
         if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
             // Create new shots
             if (playerTank.canFire()) {
-                playerTank.fire(shotSound); // adds a single shot to tank's shots array
+                playerTank.fire(playerTank, shotSound); // adds a single shot to tank's shots array
             }
         }
     }
@@ -299,6 +296,7 @@ public class MainGameScreen implements Screen {
         viewport.update(width, height, true);
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.setProjectionMatrix(hudCamera.combined);
+        controller.resize(width, height);
     }
 
     @Override
