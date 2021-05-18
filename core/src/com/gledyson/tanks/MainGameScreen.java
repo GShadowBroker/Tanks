@@ -6,6 +6,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
@@ -16,58 +17,65 @@ import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class MainGameScreen implements Screen {
-    private TanksGame game;
+    private final TanksGame game;
 
-    private OrthographicCamera camera;
-    private Viewport viewport;
+    private final OrthographicCamera camera;
+    private final OrthographicCamera hudCamera;
+    private final Viewport viewport;
 
-    private PlayerTank playerTank;
-    private EnemyTank enemyTank;
-    private TestBackground background;
-
-    private Rectangle collisionBox;
-
-    private TextureAtlas textureAtlas;
+    private final PlayerTank playerTank;
+    private final EnemyTank enemyTank;
+    private final TestBackground background;
+    private final Rectangle collisionBox;
+    private final TextureAtlas textureAtlas;
+    private final BitmapFont font;
 
     // Sound and music
-    private Music engineSound;
-    private Sound shotSound;
-    private Sound tankHitSound;
+    private final Music engineSound;
+    private final Sound shotSound;
+    private final Sound tankHitSound;
+
+    // Timer to pause
+    private float timeSincePaused;
 
     public MainGameScreen(TanksGame game) {
         this.game = game;
+        font = game.font;
 
         // create camera and set viewport
         camera = new OrthographicCamera();
+        camera.setToOrtho(true, game.WIDTH, game.HEIGHT);
+        hudCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        hudCamera.position.set(hudCamera.viewportWidth / 2.0f, hudCamera.viewportHeight / 2.0f, 1.0f);
         viewport = new StretchViewport(game.WIDTH, game.HEIGHT, camera);
 
         // load textures
         this.textureAtlas = new TextureAtlas(Gdx.files.internal("textures.atlas"));
         TextureRegion blueTankTexture = textureAtlas.findRegion("tank_blue");
         TextureRegion redTankTexture = textureAtlas.findRegion("tank_red");
-
         TextureRegion grassTexture = textureAtlas.findRegion("tileGrass1");
-
         TextureRegion playerShotTexture = textureAtlas.findRegion("shotThin");
         TextureRegion enemyShotTexture = textureAtlas.findRegion("shotRed");
 
         // create player and enemy tanks
         this.playerTank = new PlayerTank(
-                game.WIDTH / 2, game.HEIGHT / 4,
+                game.WIDTH / 2f, game.HEIGHT / 4f,
                 42, 46,
+                180,
                 blueTankTexture,
                 playerShotTexture,
                 8, 26,
-                650, 2.0f
+                650, 3.5f
         );
 
         this.enemyTank = new EnemyTank(
-                game.WIDTH / 2, 3 * game.HEIGHT / 4,
+                game.WIDTH / 2f, 3 * game.HEIGHT / 4f,
                 38, 46,
+                0,
                 redTankTexture,
                 enemyShotTexture,
                 21, 38,
-                800, 2.2f
+                800, 4.0f
         );
 
         // create terrain
@@ -79,7 +87,7 @@ public class MainGameScreen implements Screen {
         shotSound = Gdx.audio.newSound(Gdx.files.internal("shot.wav"));
         tankHitSound = Gdx.audio.newSound(Gdx.files.internal("tank_hit.wav"));
 
-        // Init rectangle
+        // Init
         collisionBox = new Rectangle();
     }
 
@@ -92,11 +100,17 @@ public class MainGameScreen implements Screen {
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
         camera.update();
+        hudCamera.update();
 
         playerTank.update(delta);
         enemyTank.update(delta);
 
         game.batch.begin();
+        // Timers
+        timeSincePaused += delta;
+
+        // player input
+        handlePlayerInput(delta);
 
         // Draw background
         background.draw(game);
@@ -119,10 +133,12 @@ public class MainGameScreen implements Screen {
 
         // Explosions
 
+        // Draw HUD
+        font.draw(game.batch, "FPS: " + Gdx.graphics.getFramesPerSecond(), 16, hudCamera.viewportHeight - 16);
+
         game.batch.end();
 
-        // player input
-        handlePlayerInput(delta);
+
     }
 
     private void evaluateCollisions() {
@@ -185,6 +201,11 @@ public class MainGameScreen implements Screen {
         float currentAngle = playerTank.getTankAngle();
         float rotationRate = playerTank.getRotationSpeed();
 
+        if (timeSincePaused > 1 && Gdx.input.isKeyPressed(Input.Keys.ESCAPE)) {
+            timeSincePaused = 0;
+            game.setScreen(new PauseScreen(game, this));
+        }
+
         if (Gdx.input.isKeyPressed(Input.Keys.A)) {
 
             // clockwise
@@ -218,8 +239,8 @@ public class MainGameScreen implements Screen {
             float speed = playerTank.getSpeed();
             float angle = playerTank.getTankAngle();
 
-            float newPosX = posX + speed * MathUtils.sinDeg(-angle) * delta;
-            float newPosY = posY + speed * MathUtils.cosDeg(-angle) * delta;
+            float newPosX = posX - speed * MathUtils.sinDeg(-angle) * delta;
+            float newPosY = posY - speed * MathUtils.cosDeg(-angle) * delta;
             collisionBox.set(newPosX, newPosY, playerTank.getWidth(), playerTank.getHeight());
 
             if (!collisionBox.overlaps(enemyTank.getBoundingBox())) {
@@ -237,8 +258,8 @@ public class MainGameScreen implements Screen {
             float reverseSpeed = playerTank.getReverseSpeed();
             float angle = playerTank.getTankAngle();
 
-            float newPosX = posX - reverseSpeed * MathUtils.sinDeg(-angle) * delta;
-            float newPosY = posY - reverseSpeed * MathUtils.cosDeg(-angle) * delta;
+            float newPosX = posX + reverseSpeed * MathUtils.sinDeg(-angle) * delta;
+            float newPosY = posY + reverseSpeed * MathUtils.cosDeg(-angle) * delta;
             collisionBox.set(newPosX, newPosY, playerTank.getWidth(), playerTank.getHeight());
 
             if (!collisionBox.overlaps(enemyTank.getBoundingBox())) {
@@ -277,6 +298,7 @@ public class MainGameScreen implements Screen {
     public void resize(int width, int height) {
         viewport.update(width, height, true);
         game.batch.setProjectionMatrix(camera.combined);
+        game.batch.setProjectionMatrix(hudCamera.combined);
     }
 
     @Override
@@ -300,5 +322,6 @@ public class MainGameScreen implements Screen {
         shotSound.dispose();
         engineSound.dispose();
         tankHitSound.dispose();
+        font.dispose();
     }
 }

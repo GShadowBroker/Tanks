@@ -7,10 +7,8 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
 public class Shot {
-    private float positionX, positionY;
-    private float width, height;
-    private TextureRegion shotTexture;
     private Rectangle boundingBox;
+    private TextureRegion shotTexture;
 
     private float speed;
     private float rate;
@@ -20,12 +18,8 @@ public class Shot {
                 float width, float height,
                 TextureRegion shotTexture,
                 float speed, float rate, float angle) {
-        this.positionX = centerX - (width / 2);
-        this.positionY = centerY - (height / 2);
-        this.width = width;
-        this.height = height;
         this.shotTexture = shotTexture;
-        boundingBox = new Rectangle(positionX, positionY, width, height);
+        boundingBox = new Rectangle(centerX - (width / 2), centerY - (height / 2), width, height);
         this.speed = speed;
         this.rate = rate;
         this.angle = angle;
@@ -35,20 +29,22 @@ public class Shot {
         return boundingBox;
     }
 
+    public void setBoundingBox(Rectangle boundingBox) {
+        this.boundingBox = boundingBox;
+    }
+
     public void draw(SpriteBatch batch) {
         batch.draw(
                 shotTexture,
-                positionX, positionY,
-                width / 2, height / 2,
-                width, height,
+                boundingBox.x, boundingBox.y,
+                boundingBox.width / 2, boundingBox.height / 2,
+                boundingBox.width, boundingBox.height,
                 1, 1,
                 angle
         );
     }
 
     public void updatePosition(float x, float y) {
-        setPositionX(x);
-        setPositionY(y);
         boundingBox.setX(x);
         boundingBox.setY(y);
     }
@@ -58,35 +54,35 @@ public class Shot {
     }
 
     public float getPositionX() {
-        return positionX;
+        return boundingBox.x;
     }
 
     public void setPositionX(float positionX) {
-        this.positionX = positionX;
+        boundingBox.x = positionX;
     }
 
     public float getPositionY() {
-        return positionY;
+        return boundingBox.y;
     }
 
     public void setPositionY(float positionY) {
-        this.positionY = positionY;
+        boundingBox.y = positionY;
     }
 
     public float getWidth() {
-        return width;
+        return boundingBox.width;
     }
 
     public void setWidth(float width) {
-        this.width = width;
+        boundingBox.width = width;
     }
 
     public float getHeight() {
-        return height;
+        return boundingBox.height;
     }
 
     public void setHeight(float height) {
-        this.height = height;
+        boundingBox.height = height;
     }
 
     public float getSpeed() {
@@ -111,5 +107,13 @@ public class Shot {
 
     public void setAngle(float angle) {
         this.angle = angle;
+    }
+
+    public TextureRegion getShotTexture() {
+        return shotTexture;
+    }
+
+    public void setShotTexture(TextureRegion shotTexture) {
+        this.shotTexture = shotTexture;
     }
 }

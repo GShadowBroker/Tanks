@@ -1,6 +1,7 @@
 package com.gledyson.tanks;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class TanksGame extends Game {
@@ -11,9 +12,13 @@ public class TanksGame extends Game {
     // Game-wide objects
     public SpriteBatch batch;
 
+    // load font
+    public BitmapFont font;
+
     @Override
     public void create() {
         batch = new SpriteBatch();
+        font = new BitmapFont();
         setScreen(new MainGameScreen(this));
     }
 
@@ -24,6 +29,7 @@ public class TanksGame extends Game {
 
     @Override
     public void dispose() {
+        font.dispose();
         batch.dispose();
     }
 }

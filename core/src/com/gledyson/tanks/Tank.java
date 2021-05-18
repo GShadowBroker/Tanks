@@ -1,16 +1,13 @@
 package com.gledyson.tanks;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
 public abstract class Tank {
     // Position and size
-    private float positionX, positionY, height, width;
     private float shotWidth, shotHeight;
     private float tankAngle;
 
@@ -35,18 +32,15 @@ public abstract class Tank {
     public Tank(
             float centerX, float centerY,
             float width, float height,
+            float angle,
             TextureRegion tankTexture,
             TextureRegion shotTexture,
             float shotWidth, float shotHeight,
             float shotSpeed, float shotRate
     ) {
-        positionX = centerX - (width / 2.0f);
-        positionY = centerY - (height / 2.0f);
-        this.width = width;
-        this.height = height;
-        boundingBox = new Rectangle(positionX, positionY, width, height);
+        boundingBox = new Rectangle(centerX - (width / 2.0f), centerY - (height / 2.0f), width, height);
         this.tankTexture = tankTexture;
-        this.tankAngle = 0f;
+        this.tankAngle = angle;
 
         // shots
         this.shots = new Array<>();
@@ -58,12 +52,11 @@ public abstract class Tank {
     }
 
     public void update(float deltaTime) {
+
         elapsedTimeSinceLastShot += deltaTime;
     }
 
     public void updatePosition(float x, float y) {
-        setPositionX(x);
-        setPositionY(y);
         boundingBox.setX(x);
         boundingBox.setY(y);
     }
@@ -79,9 +72,9 @@ public abstract class Tank {
     public void draw(SpriteBatch batch) {
         batch.draw(
                 tankTexture,
-                positionX, positionY,
-                width / 2, height / 2,
-                width, height,
+                boundingBox.x, boundingBox.y,
+                boundingBox.width / 2, boundingBox.height / 2,
+                boundingBox.width, boundingBox.height,
                 1, 1,
                 tankAngle
         );
@@ -90,13 +83,13 @@ public abstract class Tank {
     public void fire(Sound shotSound) {
 
         Shot newShot = new Shot(
-                positionX + (width / 2),
-                positionY + (width / 2),
+                boundingBox.x + (boundingBox.width / 2),
+                boundingBox.y + (boundingBox.width / 2),
                 shotWidth, shotHeight,
                 shotTexture,
                 shotSpeed,
                 shotRate,
-                tankAngle
+                tankAngle + 180
         );
 
         shots.add(newShot);
@@ -105,7 +98,6 @@ public abstract class Tank {
 
         elapsedTimeSinceLastShot = 0f;
     }
-
 
 
     public void die() {
@@ -117,35 +109,35 @@ public abstract class Tank {
     }
 
     public float getPositionX() {
-        return positionX;
+        return boundingBox.x;
     }
 
     public void setPositionX(float positionX) {
-        this.positionX = positionX;
+        boundingBox.x = positionX;
     }
 
     public float getPositionY() {
-        return positionY;
+        return boundingBox.y;
     }
 
     public void setPositionY(float positionY) {
-        this.positionY = positionY;
+        boundingBox.y = positionY;
     }
 
     public float getHeight() {
-        return height;
+        return boundingBox.height;
     }
 
     public void setHeight(float height) {
-        this.height = height;
+        boundingBox.height = height;
     }
 
     public float getWidth() {
-        return width;
+        return boundingBox.width;
     }
 
     public void setWidth(float width) {
-        this.width = width;
+        boundingBox.width = width;
     }
 
     public float getShotWidth() {
