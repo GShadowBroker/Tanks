@@ -17,6 +17,7 @@ public abstract class Tank {
 
     // Texture
     private final TextureRegion tankTexture;
+    private final TextureRegion tankDestroyedTexture;
     private final TextureRegion shotTexture;
 
     // Shots
@@ -29,18 +30,23 @@ public abstract class Tank {
     private float speed = 64;
     private float rotationSpeed = 150;
     private float reverseSpeed = this.speed / 2;
+    private int armor = 500;
+    private int health = 800;
+    private boolean dead = false;
 
     public Tank(
             float centerX, float centerY,
             float width, float height,
             float angle,
             TextureRegion tankTexture,
+            TextureRegion tankDestroyedTexture,
             TextureRegion shotTexture,
             float shotWidth, float shotHeight,
             float shotSpeed, float shotRate
     ) {
         boundingBox = new Rectangle(centerX - (width / 2.0f), centerY - (height / 2.0f), width, height);
         this.tankTexture = tankTexture;
+        this.tankDestroyedTexture = tankDestroyedTexture;
         this.tankAngle = angle;
 
         // shots
@@ -71,14 +77,25 @@ public abstract class Tank {
     }
 
     public void draw(SpriteBatch batch) {
-        batch.draw(
-                tankTexture,
-                boundingBox.x, boundingBox.y,
-                boundingBox.width / 2, boundingBox.height / 2,
-                boundingBox.width, boundingBox.height,
-                1, 1,
-                tankAngle
-        );
+        if (dead) {
+            batch.draw(
+                    tankDestroyedTexture,
+                    boundingBox.x, boundingBox.y,
+                    boundingBox.width / 2, boundingBox.height / 2,
+                    boundingBox.width, boundingBox.height,
+                    1, 1,
+                    tankAngle
+            );
+        } else {
+            batch.draw(
+                    tankTexture,
+                    boundingBox.x, boundingBox.y,
+                    boundingBox.width / 2, boundingBox.height / 2,
+                    boundingBox.width, boundingBox.height,
+                    1, 1,
+                    tankAngle
+            );
+        }
     }
 
     public void fire(Tank tank, Sound shotSound) {
@@ -103,13 +120,27 @@ public abstract class Tank {
         elapsedTimeSinceLastShot = 0f;
     }
 
+    public boolean takeDamageAndCheckDestroyed(int damage) {
+        int totalDamage = damage - this.armor;
 
-    public void die() {
+        if (totalDamage < 0) totalDamage = 0;
+
+        health -= totalDamage;
+
+        if (health <= 0) {
+            this.dead = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    public void getDestroyed() {
 
     }
 
     public void dispose() {
-
+        
     }
 
     public float getPositionX() {
@@ -222,5 +253,9 @@ public abstract class Tank {
 
     public void setElapsedTimeSinceLastShot(float elapsedTimeSinceLastShot) {
         this.elapsedTimeSinceLastShot = elapsedTimeSinceLastShot;
+    }
+
+    public boolean isDead() {
+        return dead;
     }
 }

@@ -1,15 +1,19 @@
 package com.gledyson.tanks;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.utils.viewport.FillViewport;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class Controller {
@@ -20,7 +24,7 @@ public class Controller {
     private TextureRegion upBtn, downBtn, rightBtn, leftBtn;
 
     // Commands
-    private boolean upPressed, downPressed, rightPressed, leftPressed;
+    private boolean upPressed, downPressed, rightPressed, leftPressed, firePressed;
 
     public Controller(TanksGame game, TextureAtlas atlas) {
         camera = new OrthographicCamera();
@@ -136,6 +140,10 @@ public class Controller {
 
     public boolean isLeftPressed() {
         return leftPressed;
+    }
+
+    public boolean isFirePressed() {
+        return firePressed;
     }
 
     public void resize(int width, int height) {

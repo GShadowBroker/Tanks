@@ -13,6 +13,7 @@ public class Shot {
     private float speed;
     private float rate;
     private float angle;
+    private final int damage = 1000;
 
     public Shot(float centerX, float centerY,
                 float width, float height,
@@ -115,5 +116,9 @@ public class Shot {
 
     public void setShotTexture(TextureRegion shotTexture) {
         this.shotTexture = shotTexture;
+    }
+
+    public int getDamage() {
+        return damage;
     }
 }

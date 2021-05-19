@@ -1,5 +1,6 @@
 package com.gledyson.tanks;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
@@ -13,8 +14,11 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
+import org.w3c.dom.Text;
 
 public class MainGameScreen implements Screen {
     private final TanksGame game;
@@ -31,10 +35,18 @@ public class MainGameScreen implements Screen {
     private final TextureAtlas textureAtlas;
     private final BitmapFont font;
 
+    private final Array<Explosion> explosions;
+    private final TextureRegion[] explosionFrames;
+    private final TextureRegion[] smokeExplosionFrames;
+
+    private static final float EXPLOSION_FRAME_INTERVAL = 0.125f;
+    private static final float SMOKE_EXPLOSION_FRAME_INTERVAL = 0.05f;
+
     // Sound and music
     private final Music engineSound;
     private final Sound shotSound;
     private final Sound tankHitSound;
+    private final Sound tankExplodedSound;
 
     // Timer to pause
     private float timeSincePaused;
@@ -45,15 +57,19 @@ public class MainGameScreen implements Screen {
 
         // create camera and set viewport
         camera = new OrthographicCamera();
-        camera.setToOrtho(true, game.WIDTH, game.HEIGHT);
         hudCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         hudCamera.position.set(hudCamera.viewportWidth / 2.0f, hudCamera.viewportHeight / 2.0f, 1.0f);
-        viewport = new StretchViewport(game.WIDTH, game.HEIGHT, camera);
+        viewport = new FitViewport(game.WIDTH, game.HEIGHT, camera);
 
         // load textures
         this.textureAtlas = new TextureAtlas(Gdx.files.internal("textures.atlas"));
+
         TextureRegion blueTankTexture = textureAtlas.findRegion("tank_blue");
         TextureRegion redTankTexture = textureAtlas.findRegion("tank_red");
+
+        TextureRegion blueTankDestroyedTexture = textureAtlas.findRegion("tankBody_blue_outline");
+        TextureRegion redTankDestroyedTexture = textureAtlas.findRegion("tankBody_red_outline");
+
         TextureRegion grassTexture = textureAtlas.findRegion("tileGrass1");
         TextureRegion playerShotTexture = textureAtlas.findRegion("shotThin");
         TextureRegion enemyShotTexture = textureAtlas.findRegion("shotRed");
@@ -64,6 +80,7 @@ public class MainGameScreen implements Screen {
                 42, 46,
                 180,
                 blueTankTexture,
+                blueTankDestroyedTexture,
                 playerShotTexture,
                 8, 26,
                 650, 3.5f
@@ -74,6 +91,7 @@ public class MainGameScreen implements Screen {
                 38, 46,
                 0,
                 redTankTexture,
+                redTankDestroyedTexture,
                 enemyShotTexture,
                 21, 38,
                 800, 4.0f
@@ -87,10 +105,33 @@ public class MainGameScreen implements Screen {
         engineSound.setLooping(true);
         shotSound = Gdx.audio.newSound(Gdx.files.internal("shot.wav"));
         tankHitSound = Gdx.audio.newSound(Gdx.files.internal("tank_hit.wav"));
+        tankExplodedSound = Gdx.audio.newSound(Gdx.files.internal("tank_exploded.wav"));
 
         // Init
         collisionBox = new Rectangle();
         controller = new Controller(game, textureAtlas);
+
+        // Explosions
+        explosions = new Array<>();
+
+        // texture file names
+        String[] explosionTextureNames = {
+                "explosion1", "explosion2",
+                "explosion3", "explosion4",
+                "explosion5"};
+        String[] smokeExplosionTextureNames = {"explosionSmoke1", "explosionSmoke2",
+                "explosionSmoke3", "explosionSmoke4", "explosionSmoke5"};
+
+        // get textures from atlas and build frames
+        explosionFrames = new TextureRegion[explosionTextureNames.length];
+        smokeExplosionFrames = new TextureRegion[smokeExplosionTextureNames.length];
+
+        for (int i = 0; i < explosionFrames.length; i++) {
+            explosionFrames[i] = textureAtlas.findRegion(explosionTextureNames[i]);
+        }
+        for (int i = 0; i < explosionFrames.length; i++) {
+            smokeExplosionFrames[i] = textureAtlas.findRegion(smokeExplosionTextureNames[i]);
+        }
     }
 
     @Override
@@ -111,9 +152,6 @@ public class MainGameScreen implements Screen {
         // Timers
         timeSincePaused += delta;
 
-        // Draw controllers
-//        controller.draw();
-
         // player input
         handlePlayerInput(delta);
 
@@ -124,7 +162,7 @@ public class MainGameScreen implements Screen {
         playerTank.draw(game.batch);
         enemyTank.draw(game.batch);
 
-        if (enemyTank.canFire()) {
+        if (!enemyTank.isDead() && enemyTank.canFire()) {
             enemyTank.fire(enemyTank, shotSound);
         }
 
@@ -136,7 +174,8 @@ public class MainGameScreen implements Screen {
         // Check collisions
         evaluateCollisions();
 
-        // Explosions
+        // Update and draw explosions
+        updateAndDrawExplosions(delta);
 
         // Draw HUD
         font.draw(game.batch, "FPS: " + Gdx.graphics.getFramesPerSecond(), 16, hudCamera.viewportHeight - 16);
@@ -144,7 +183,9 @@ public class MainGameScreen implements Screen {
         game.batch.end();
 
         // render controller
-        controller.draw();
+        if (Gdx.app.getType() == Application.ApplicationType.Android) {
+            controller.draw();
+        }
     }
 
     private void evaluateCollisions() {
@@ -155,8 +196,34 @@ public class MainGameScreen implements Screen {
 
             // if shell hits
             if (shot.intersects(enemyTank.getBoundingBox())) {
-                tankHitSound.play();
+                // Check if already dead
+                if (enemyTank.isDead()) {
+                    tankHitSound.play();
+                    iterator.remove();
+                    continue;
+                }
+
+                boolean isDead = enemyTank.takeDamageAndCheckDestroyed(shot.getDamage());
                 iterator.remove();
+
+                if (isDead) {
+                    tankExplodedSound.play();
+                    explosions.add(new Explosion(
+                            explosionFrames,
+                            EXPLOSION_FRAME_INTERVAL,
+                            enemyTank.getPositionX(),
+                            enemyTank.getPositionY()
+                    ));
+                    enemyTank.getDestroyed();
+                } else {
+                    tankHitSound.play();
+                    explosions.add(new Explosion(
+                            smokeExplosionFrames,
+                            SMOKE_EXPLOSION_FRAME_INTERVAL,
+                            enemyTank.getPositionX(),
+                            enemyTank.getPositionY()
+                    ));
+                }
             }
         }
 
@@ -166,8 +233,36 @@ public class MainGameScreen implements Screen {
 
             // if shell hits
             if (shot.intersects(playerTank.getBoundingBox())) {
-                tankHitSound.play();
+                // check if player is dead
+                if (playerTank.isDead()) {
+                    tankHitSound.play();
+                    if (engineSound.isPlaying()) engineSound.stop();
+                    iterator.remove();
+                    continue;
+                }
+
+                boolean isDead = playerTank.takeDamageAndCheckDestroyed(shot.getDamage());
                 iterator.remove();
+
+                if (isDead) {
+                    tankExplodedSound.play();
+                    if (engineSound.isPlaying()) engineSound.stop();
+                    explosions.add(new Explosion(
+                            explosionFrames,
+                            EXPLOSION_FRAME_INTERVAL,
+                            playerTank.getPositionX(),
+                            playerTank.getPositionY()
+                    ));
+                    playerTank.getDestroyed();
+                } else {
+                    tankHitSound.play();
+                    explosions.add(new Explosion(
+                            smokeExplosionFrames,
+                            SMOKE_EXPLOSION_FRAME_INTERVAL,
+                            playerTank.getPositionX(),
+                            playerTank.getPositionY()
+                    ));
+                }
             }
         }
 
@@ -194,8 +289,25 @@ public class MainGameScreen implements Screen {
         }
     }
 
+    private void updateAndDrawExplosions(float delta) {
+        Array.ArrayIterator<Explosion> explosionsIterator = explosions.iterator();
+        while (explosionsIterator.hasNext()) {
+            Explosion explosion = explosionsIterator.next();
+
+            explosion.update(delta);
+
+            if (explosion.isFinished()) {
+                explosionsIterator.remove();
+            } else {
+                // if animation is not finished
+                explosion.draw(game.batch);
+            }
+        }
+    }
 
     private void handlePlayerInput(float delta) {
+        if (playerTank.isDead()) return;
+
         float currentAngle = playerTank.getTankAngle();
         float rotationRate = playerTank.getRotationSpeed();
 
@@ -281,8 +393,7 @@ public class MainGameScreen implements Screen {
             playerTank.setPositionY(game.HEIGHT - playerTank.getWidth());
         }
 
-
-        if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.SPACE) || Gdx.input.isTouched()) {
             // Create new shots
             if (playerTank.canFire()) {
                 playerTank.fire(playerTank, shotSound); // adds a single shot to tank's shots array
@@ -293,10 +404,10 @@ public class MainGameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
+        controller.resize(width, height);
         viewport.update(width, height, true);
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.setProjectionMatrix(hudCamera.combined);
-        controller.resize(width, height);
     }
 
     @Override
@@ -320,6 +431,9 @@ public class MainGameScreen implements Screen {
         shotSound.dispose();
         engineSound.dispose();
         tankHitSound.dispose();
+        tankExplodedSound.dispose();
         font.dispose();
+        playerTank.dispose();
+        enemyTank.dispose();
     }
 }
