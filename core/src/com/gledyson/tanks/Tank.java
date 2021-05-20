@@ -27,10 +27,10 @@ public abstract class Tank {
     private float elapsedTimeSinceLastShot;
 
     // Characteristics
-    private float speed = 64;
-    private float rotationSpeed = 150;
-    private float reverseSpeed = this.speed / 2;
-    private int armor = 500;
+    private final float speed = 64;
+    private final float rotationSpeed = 150;
+    private final float reverseSpeed = this.speed / 2;
+    private final int armor = 500;
     private int health = 800;
     private boolean dead = false;
 
@@ -59,7 +59,6 @@ public abstract class Tank {
     }
 
     public void update(float deltaTime) {
-
         elapsedTimeSinceLastShot += deltaTime;
     }
 
@@ -135,12 +134,8 @@ public abstract class Tank {
         return false;
     }
 
-    public void getDestroyed() {
-
-    }
-
     public void dispose() {
-        
+
     }
 
     public float getPositionX() {
@@ -179,24 +174,12 @@ public abstract class Tank {
         return shotWidth;
     }
 
-    public void setShotWidth(float shotWidth) {
-        this.shotWidth = shotWidth;
-    }
-
     public float getShotHeight() {
         return shotHeight;
     }
 
-    public void setShotHeight(float shotHeight) {
-        this.shotHeight = shotHeight;
-    }
-
     public Array<Shot> getShots() {
         return shots;
-    }
-
-    public void setShots(Array<Shot> shots) {
-        this.shots = shots;
     }
 
     public float getTankAngle() {
@@ -211,28 +194,12 @@ public abstract class Tank {
         return speed;
     }
 
-    public void setSpeed(float speed) {
-        this.speed = speed;
-    }
-
     public float getRotationSpeed() {
         return rotationSpeed;
     }
 
-    public void setRotationSpeed(float rotationSpeed) {
-        this.rotationSpeed = rotationSpeed;
-    }
-
     public float getReverseSpeed() {
         return reverseSpeed;
-    }
-
-    public void setReverseSpeed(float reverseSpeed) {
-        this.reverseSpeed = reverseSpeed;
-    }
-
-    public TextureRegion getTankTexture() {
-        return tankTexture;
     }
 
     public TextureRegion getShotTexture() {
@@ -245,10 +212,6 @@ public abstract class Tank {
 
     public float getShotRate() {
         return shotRate;
-    }
-
-    public float getElapsedTimeSinceLastShot() {
-        return elapsedTimeSinceLastShot;
     }
 
     public void setElapsedTimeSinceLastShot(float elapsedTimeSinceLastShot) {

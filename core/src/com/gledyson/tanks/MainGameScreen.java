@@ -7,7 +7,6 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
@@ -15,25 +14,23 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-import org.w3c.dom.Text;
+import java.util.Iterator;
 
 public class MainGameScreen implements Screen {
     private final TanksGame game;
     private final Controller controller;
 
     private final OrthographicCamera camera;
-    private final OrthographicCamera hudCamera;
+    //    private final OrthographicCamera hudCamera;
     private final Viewport viewport;
 
     private final PlayerTank playerTank;
-    private final EnemyTank enemyTank;
+    private final Array<EnemyTank> enemyTankList;
     private final TestBackground background;
     private final Rectangle collisionBox;
     private final TextureAtlas textureAtlas;
-    private final BitmapFont font;
 
     private final Array<Explosion> explosions;
     private final TextureRegion[] explosionFrames;
@@ -53,12 +50,11 @@ public class MainGameScreen implements Screen {
 
     public MainGameScreen(TanksGame game) {
         this.game = game;
-        font = game.font;
 
         // create camera and set viewport
         camera = new OrthographicCamera();
-        hudCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        hudCamera.position.set(hudCamera.viewportWidth / 2.0f, hudCamera.viewportHeight / 2.0f, 1.0f);
+//        hudCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+//        hudCamera.position.set(hudCamera.viewportWidth / 2.0f, hudCamera.viewportHeight / 2.0f, 1.0f);
         viewport = new FitViewport(game.WIDTH, game.HEIGHT, camera);
 
         // load textures
@@ -86,15 +82,27 @@ public class MainGameScreen implements Screen {
                 650, 3.5f
         );
 
-        this.enemyTank = new EnemyTank(
-                game.WIDTH / 2f, 3 * game.HEIGHT / 4f,
-                38, 46,
-                0,
+        enemyTankList = new Array<>();
+        spawnEnemyTank(
                 redTankTexture,
                 redTankDestroyedTexture,
                 enemyShotTexture,
-                21, 38,
-                800, 4.0f
+                game.WIDTH / 2f, 3 * game.HEIGHT / 4f,
+                23f
+        );
+        spawnEnemyTank(
+                redTankTexture,
+                redTankDestroyedTexture,
+                enemyShotTexture,
+                100, 3 * game.HEIGHT / 4f,
+                9f
+        );
+        spawnEnemyTank(
+                redTankTexture,
+                redTankDestroyedTexture,
+                enemyShotTexture,
+                410, 3 * game.HEIGHT / 4f,
+                0f
         );
 
         // create terrain
@@ -142,34 +150,41 @@ public class MainGameScreen implements Screen {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
+        //        hudCamera.update();
         camera.update();
-        hudCamera.update();
+        game.batch.setProjectionMatrix(camera.combined);
 
-        playerTank.update(delta);
-        enemyTank.update(delta);
-
-        game.batch.begin();
-        // Timers
-        timeSincePaused += delta;
+        // Shake Effect
+        if (ShakeEffect.getTimeLeft() > 0) {
+            camera.translate(ShakeEffect.updateAndGetPosition(delta));
+        } else {
+            // recenter camera
+            camera.setToOrtho(false, game.WIDTH, game.HEIGHT);
+        }
 
         // player input
         handlePlayerInput(delta);
+
+        /* START DRAWING */
+        game.batch.begin();
+
+        // update timers
+        timeSincePaused += delta;
+        playerTank.update(delta);
 
         // Draw background
         background.draw(game);
 
         // Draw tanks
         playerTank.draw(game.batch);
-        enemyTank.draw(game.batch);
-
-        if (!enemyTank.isDead() && enemyTank.canFire()) {
-            enemyTank.fire(enemyTank, shotSound);
-        }
+        updateAndDrawEnemyTanks(delta);
 
         // Draw shots
         // Remove old shots
         drawAndUpdateShots(playerTank, delta);
-        drawAndUpdateShots(enemyTank, delta);
+
+        // Draw HUD
+//        game.font.draw(game.batch, "FPS: " + Gdx.graphics.getFramesPerSecond(), 16, hudCamera.viewportHeight - 16);
 
         // Check collisions
         evaluateCollisions();
@@ -177,95 +192,104 @@ public class MainGameScreen implements Screen {
         // Update and draw explosions
         updateAndDrawExplosions(delta);
 
-        // Draw HUD
-        font.draw(game.batch, "FPS: " + Gdx.graphics.getFramesPerSecond(), 16, hudCamera.viewportHeight - 16);
-
+        /* END DRAWING */
         game.batch.end();
 
-        // render controller
+        // render controller (has to be after main batch.end())
         if (Gdx.app.getType() == Application.ApplicationType.Android) {
             controller.draw();
         }
     }
 
+    private void spawnEnemyTank(
+            TextureRegion tankTexture,
+            TextureRegion destroyedTankTexture,
+            TextureRegion shotTexture,
+            float centerX, float centerY,
+            float angle
+    ) {
+        enemyTankList.add(new EnemyTank(
+                centerX, centerY,
+                38, 46,
+                angle,
+                tankTexture,
+                destroyedTankTexture,
+                shotTexture,
+                21, 38,
+                800, 4.0f
+        ));
+    }
+
+    private void updateAndDrawEnemyTanks(float delta) {
+        for (Tank enemyTank : enemyTankList) {
+            enemyTank.update(delta);
+            enemyTank.draw(game.batch);
+
+//            if (!enemyTank.isDead() && enemyTank.canFire()) {
+//                enemyTank.fire(enemyTank, shotSound);
+//            }
+
+            drawAndUpdateShots(enemyTank, delta);
+        }
+    }
+
     private void evaluateCollisions() {
 
+        // Check every shot of playerTank
         Array.ArrayIterator<Shot> iterator = playerTank.getShots().iterator();
         while (iterator.hasNext()) {
             Shot shot = iterator.next();
 
-            // if shell hits
-            if (shot.intersects(enemyTank.getBoundingBox())) {
-                // Check if already dead
-                if (enemyTank.isDead()) {
-                    tankHitSound.play();
-                    iterator.remove();
-                    continue;
-                }
-
-                boolean isDead = enemyTank.takeDamageAndCheckDestroyed(shot.getDamage());
-                iterator.remove();
-
-                if (isDead) {
-                    tankExplodedSound.play();
-                    explosions.add(new Explosion(
-                            explosionFrames,
-                            EXPLOSION_FRAME_INTERVAL,
-                            enemyTank.getPositionX(),
-                            enemyTank.getPositionY()
-                    ));
-                    enemyTank.getDestroyed();
-                } else {
-                    tankHitSound.play();
-                    explosions.add(new Explosion(
-                            smokeExplosionFrames,
-                            SMOKE_EXPLOSION_FRAME_INTERVAL,
-                            enemyTank.getPositionX(),
-                            enemyTank.getPositionY()
-                    ));
+            for (Tank enemyTank : enemyTankList) {
+                // if shell hits
+                if (shot.intersects(enemyTank.getBoundingBox())) {
+                    handleHit(shot, enemyTank, iterator);
                 }
             }
         }
 
-        iterator = enemyTank.getShots().iterator();
-        while (iterator.hasNext()) {
-            Shot shot = iterator.next();
+        // Check every enemy tank's shot
+        for (Tank enemyTank : enemyTankList) {
+            iterator = enemyTank.getShots().iterator();
+            while (iterator.hasNext()) {
+                Shot shot = iterator.next();
 
-            // if shell hits
-            if (shot.intersects(playerTank.getBoundingBox())) {
-                // check if player is dead
-                if (playerTank.isDead()) {
-                    tankHitSound.play();
-                    if (engineSound.isPlaying()) engineSound.stop();
-                    iterator.remove();
-                    continue;
-                }
-
-                boolean isDead = playerTank.takeDamageAndCheckDestroyed(shot.getDamage());
-                iterator.remove();
-
-                if (isDead) {
-                    tankExplodedSound.play();
-                    if (engineSound.isPlaying()) engineSound.stop();
-                    explosions.add(new Explosion(
-                            explosionFrames,
-                            EXPLOSION_FRAME_INTERVAL,
-                            playerTank.getPositionX(),
-                            playerTank.getPositionY()
-                    ));
-                    playerTank.getDestroyed();
-                } else {
-                    tankHitSound.play();
-                    explosions.add(new Explosion(
-                            smokeExplosionFrames,
-                            SMOKE_EXPLOSION_FRAME_INTERVAL,
-                            playerTank.getPositionX(),
-                            playerTank.getPositionY()
-                    ));
+                // if shell hits
+                if (shot.intersects(playerTank.getBoundingBox())) {
+                    handleHit(shot, playerTank, iterator);
                 }
             }
         }
+    }
 
+    public void handleHit(Shot shot, Tank tank, Iterator<Shot> iterator) {
+        // Check if already dead
+        if (tank.isDead()) {
+            tankHitSound.play();
+            iterator.remove();
+            return;
+        }
+
+        // if tank is dead
+        if (tank.takeDamageAndCheckDestroyed(shot.getDamage())) {
+            tankExplodedSound.play();
+            ShakeEffect.shakeIt(4f, .2f);
+            explosions.add(new Explosion(
+                    explosionFrames,
+                    EXPLOSION_FRAME_INTERVAL,
+                    tank.getPositionX(),
+                    tank.getPositionY()
+            ));
+        } else {
+            tankHitSound.play();
+            explosions.add(new Explosion(
+                    smokeExplosionFrames,
+                    SMOKE_EXPLOSION_FRAME_INTERVAL,
+                    shot.getPositionX(),
+                    shot.getPositionY()
+            ));
+        }
+        iterator.remove(); // removes the shot after hit
     }
 
     public void drawAndUpdateShots(Tank tank, float deltaTime) {
@@ -353,7 +377,15 @@ public class MainGameScreen implements Screen {
                     playerTank.getWidth(),
                     playerTank.getHeight());
 
-            if (!collisionBox.overlaps(enemyTank.getBoundingBox())) {
+            boolean isPathBlocked = false;
+
+            for (Tank enemyTank : enemyTankList) {
+                if (collisionBox.overlaps(enemyTank.getBoundingBox())) {
+                    isPathBlocked = true;
+                }
+            }
+
+            if (!isPathBlocked) {
                 playerTank.updatePosition(newPosX, newPosY);
 
                 if (!engineSound.isPlaying()) {
@@ -371,13 +403,22 @@ public class MainGameScreen implements Screen {
                     playerTank.getWidth(),
                     playerTank.getHeight());
 
-            if (!collisionBox.overlaps(enemyTank.getBoundingBox())) {
+            boolean isPathBlocked = false;
+
+            for (Tank enemyTank : enemyTankList) {
+                if (collisionBox.overlaps(enemyTank.getBoundingBox())) {
+                    isPathBlocked = true;
+                }
+            }
+
+            if (!isPathBlocked) {
                 playerTank.updatePosition(newPosX, newPosY);
 
                 if (!engineSound.isPlaying()) {
                     engineSound.play();
                 }
             }
+
         } else {
             engineSound.stop();
         }
@@ -396,6 +437,7 @@ public class MainGameScreen implements Screen {
         if (Gdx.input.isKeyPressed(Input.Keys.SPACE) || Gdx.input.isTouched()) {
             // Create new shots
             if (playerTank.canFire()) {
+                ShakeEffect.shakeIt(3f, .1f);
                 playerTank.fire(playerTank, shotSound); // adds a single shot to tank's shots array
             }
         }
@@ -406,8 +448,8 @@ public class MainGameScreen implements Screen {
     public void resize(int width, int height) {
         controller.resize(width, height);
         viewport.update(width, height, true);
-        game.batch.setProjectionMatrix(camera.combined);
-        game.batch.setProjectionMatrix(hudCamera.combined);
+//        game.batch.setProjectionMatrix(hudCamera.combined);
+//        game.batch.setProjectionMatrix(camera.combined);
     }
 
     @Override
@@ -432,8 +474,9 @@ public class MainGameScreen implements Screen {
         engineSound.dispose();
         tankHitSound.dispose();
         tankExplodedSound.dispose();
-        font.dispose();
         playerTank.dispose();
-        enemyTank.dispose();
+        for (Tank enemyTank : enemyTankList) {
+            enemyTank.dispose();
+        }
     }
 }

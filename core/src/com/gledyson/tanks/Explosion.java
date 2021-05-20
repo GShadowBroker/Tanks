@@ -2,11 +2,9 @@ package com.gledyson.tanks;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Explosion {
-    private final TextureRegion[] frames;
     private final Animation<TextureRegion> animation;
 
     // Position
@@ -14,17 +12,14 @@ public class Explosion {
     private final float explosionY;
 
     // Timing
-    private final float intervalTime;
     private float stateTime;
 
     public Explosion(TextureRegion[] explosionFrames, float frameInterval, float posX, float posY) {
-        frames = explosionFrames;
         explosionX = posX;
         explosionY = posY;
-        intervalTime = frameInterval;
         stateTime = 0f;
 
-        animation = new Animation<>(intervalTime, frames);
+        animation = new Animation<>(frameInterval, explosionFrames);
     }
 
     public void update(float delta) {
@@ -32,8 +27,7 @@ public class Explosion {
     }
 
     public void draw(SpriteBatch batch) {
-        TextureRegion currentFrame = animation.getKeyFrame(stateTime, false);
-        batch.draw(currentFrame, explosionX, explosionY);
+        batch.draw(animation.getKeyFrame(stateTime, false), explosionX, explosionY);
     }
 
     public boolean isFinished() {
