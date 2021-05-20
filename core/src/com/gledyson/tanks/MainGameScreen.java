@@ -70,6 +70,8 @@ public class MainGameScreen implements Screen {
         TextureRegion playerShotTexture = textureAtlas.findRegion("shotThin");
         TextureRegion enemyShotTexture = textureAtlas.findRegion("shotRed");
 
+        TextureRegion tracksTexture = textureAtlas.findRegion("tracksSmall");
+
         // create player and enemy tanks
         this.playerTank = new PlayerTank(
                 game.WIDTH / 2f, game.HEIGHT / 4f,
@@ -78,6 +80,7 @@ public class MainGameScreen implements Screen {
                 blueTankTexture,
                 blueTankDestroyedTexture,
                 playerShotTexture,
+                tracksTexture,
                 8, 26,
                 650, 3.5f
         );
@@ -87,6 +90,7 @@ public class MainGameScreen implements Screen {
                 redTankTexture,
                 redTankDestroyedTexture,
                 enemyShotTexture,
+                tracksTexture,
                 game.WIDTH / 2f, 3 * game.HEIGHT / 4f,
                 23f
         );
@@ -94,6 +98,7 @@ public class MainGameScreen implements Screen {
                 redTankTexture,
                 redTankDestroyedTexture,
                 enemyShotTexture,
+                tracksTexture,
                 100, 3 * game.HEIGHT / 4f,
                 9f
         );
@@ -101,6 +106,7 @@ public class MainGameScreen implements Screen {
                 redTankTexture,
                 redTankDestroyedTexture,
                 enemyShotTexture,
+                tracksTexture,
                 410, 3 * game.HEIGHT / 4f,
                 0f
         );
@@ -175,6 +181,9 @@ public class MainGameScreen implements Screen {
         // Draw background
         background.draw(game);
 
+        // Update and draw tank tracks
+        updateAndDrawTracks(delta);
+
         // Draw tanks
         playerTank.draw(game.batch);
         updateAndDrawEnemyTanks(delta);
@@ -205,6 +214,7 @@ public class MainGameScreen implements Screen {
             TextureRegion tankTexture,
             TextureRegion destroyedTankTexture,
             TextureRegion shotTexture,
+            TextureRegion tracksTexture,
             float centerX, float centerY,
             float angle
     ) {
@@ -215,6 +225,7 @@ public class MainGameScreen implements Screen {
                 tankTexture,
                 destroyedTankTexture,
                 shotTexture,
+                tracksTexture,
                 21, 38,
                 800, 4.0f
         ));
@@ -230,6 +241,36 @@ public class MainGameScreen implements Screen {
 //            }
 
             drawAndUpdateShots(enemyTank, delta);
+        }
+    }
+
+    private void updateAndDrawTracks(float delta) {
+        // player tank
+        Array.ArrayIterator<TrackPrint> iterator = playerTank.getTracks().iterator();
+        while (iterator.hasNext()) {
+            TrackPrint trackprint = iterator.next();
+
+            trackprint.update(delta);
+            if (trackprint.shouldFade()) {
+                iterator.remove();
+            } else {
+                trackprint.draw(game.batch);
+            }
+        }
+
+        // enemy tanks
+        for (Tank enemyTank : enemyTankList) {
+            iterator = enemyTank.getTracks().iterator();
+            while (iterator.hasNext()) {
+                TrackPrint trackprint = iterator.next();
+
+                trackprint.update(delta);
+                if (trackprint.shouldFade()) {
+                    iterator.remove();
+                } else {
+                    trackprint.draw(game.batch);
+                }
+            }
         }
     }
 
@@ -387,6 +428,8 @@ public class MainGameScreen implements Screen {
 
             if (!isPathBlocked) {
                 playerTank.updatePosition(newPosX, newPosY);
+                
+                playerTank.leaveTracks();
 
                 if (!engineSound.isPlaying()) {
                     engineSound.play();

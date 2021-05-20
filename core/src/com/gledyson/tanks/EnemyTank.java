@@ -6,8 +6,8 @@ import com.badlogic.gdx.math.MathUtils;
 
 public class EnemyTank extends Tank {
 
-    public EnemyTank(float centerX, float centerY, float width, float height, float angle, TextureRegion tankTexture, TextureRegion tankDestroyedTexture, TextureRegion shotTexture, float shotWidth, float shotHeight, float shotSpeed, float shotRate) {
-        super(centerX, centerY, width, height, angle, tankTexture, tankDestroyedTexture, shotTexture, shotWidth, shotHeight, shotSpeed, shotRate);
+    public EnemyTank(float centerX, float centerY, float width, float height, float angle, TextureRegion tankTexture, TextureRegion tankDestroyedTexture, TextureRegion shotTexture, TextureRegion tracksTexture, float shotWidth, float shotHeight, float shotSpeed, float shotRate) {
+        super(centerX, centerY, width, height, angle, tankTexture, tankDestroyedTexture, shotTexture, tracksTexture, shotWidth, shotHeight, shotSpeed, shotRate);
     }
 
     @Override

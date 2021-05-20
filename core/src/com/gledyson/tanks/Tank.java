@@ -19,9 +19,14 @@ public abstract class Tank {
     private final TextureRegion tankTexture;
     private final TextureRegion tankDestroyedTexture;
     private final TextureRegion shotTexture;
+    private final TextureRegion tracksTexture;
+
+    // Tracks
+    private final Array<TrackPrint> tracks;
+    private float timeSinceLastTrackAdded = 0f;
 
     // Shots
-    private Array<Shot> shots;
+    private final Array<Shot> shots;
     private final float shotSpeed;
     private final float shotRate;
     private float elapsedTimeSinceLastShot;
@@ -41,13 +46,18 @@ public abstract class Tank {
             TextureRegion tankTexture,
             TextureRegion tankDestroyedTexture,
             TextureRegion shotTexture,
+            TextureRegion tracksTexture,
             float shotWidth, float shotHeight,
             float shotSpeed, float shotRate
     ) {
         boundingBox = new Rectangle(centerX - (width / 2.0f), centerY - (height / 2.0f), width, height);
         this.tankTexture = tankTexture;
         this.tankDestroyedTexture = tankDestroyedTexture;
+        this.tracksTexture = tracksTexture;
         this.tankAngle = angle;
+
+        // tracks
+        this.tracks = new Array<>();
 
         // shots
         this.shots = new Array<>();
@@ -59,6 +69,7 @@ public abstract class Tank {
     }
 
     public void update(float deltaTime) {
+        timeSinceLastTrackAdded += deltaTime;
         elapsedTimeSinceLastShot += deltaTime;
     }
 
@@ -117,6 +128,16 @@ public abstract class Tank {
         shotSound.play();
 
         elapsedTimeSinceLastShot = 0f;
+    }
+
+    public void leaveTracks() {
+        if (timeSinceLastTrackAdded < 1f) return;
+        tracks.add(new TrackPrint(
+                tracksTexture,
+                boundingBox.x, boundingBox.y,
+                tankAngle
+        ));
+        timeSinceLastTrackAdded = 0f;
     }
 
     public boolean takeDamageAndCheckDestroyed(int damage) {
@@ -220,5 +241,9 @@ public abstract class Tank {
 
     public boolean isDead() {
         return dead;
+    }
+
+    public Array<TrackPrint> getTracks() {
+        return tracks;
     }
 }
