@@ -1,10 +1,12 @@
-package com.gledyson.tanks;
+package com.gledyson.tanks.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.gledyson.tanks.TanksGame;
+import com.gledyson.tanks.screens.MainGameScreen;
 
 public class PauseScreen implements Screen {
     private final OrthographicCamera camera;

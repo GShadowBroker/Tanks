@@ -3,6 +3,7 @@ package com.gledyson.tanks;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.gledyson.tanks.screens.MainGameScreen;
 
 public class TanksGame extends Game {
     // Game-wide settings

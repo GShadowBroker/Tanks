@@ -1,4 +1,4 @@
-package com.gledyson.tanks;
+package com.gledyson.tanks.effects;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;

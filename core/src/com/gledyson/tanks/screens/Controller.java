@@ -1,4 +1,4 @@
-package com.gledyson.tanks;
+package com.gledyson.tanks.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.gledyson.tanks.TanksGame;
 
 public class Controller {
     private OrthographicCamera camera;

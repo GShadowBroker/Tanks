@@ -1,4 +1,4 @@
-package com.gledyson.tanks;
+package com.gledyson.tanks.screens;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
@@ -15,6 +15,15 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.gledyson.tanks.effects.ShakeEffect;
+import com.gledyson.tanks.TanksGame;
+import com.gledyson.tanks.objects.TestBackground;
+import com.gledyson.tanks.effects.Explosion;
+import com.gledyson.tanks.effects.TrackPrint;
+import com.gledyson.tanks.objects.EnemyTank;
+import com.gledyson.tanks.objects.PlayerTank;
+import com.gledyson.tanks.objects.Shot;
+import com.gledyson.tanks.objects.Tank;
 
 import java.util.Iterator;
 
@@ -23,7 +32,7 @@ public class MainGameScreen implements Screen {
     private final Controller controller;
 
     private final OrthographicCamera camera;
-    //    private final OrthographicCamera hudCamera;
+    private final OrthographicCamera hudCamera;
     private final Viewport viewport;
 
     private final PlayerTank playerTank;
@@ -53,8 +62,8 @@ public class MainGameScreen implements Screen {
 
         // create camera and set viewport
         camera = new OrthographicCamera();
-//        hudCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-//        hudCamera.position.set(hudCamera.viewportWidth / 2.0f, hudCamera.viewportHeight / 2.0f, 1.0f);
+        hudCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        hudCamera.position.set(hudCamera.viewportWidth / 2.0f, hudCamera.viewportHeight / 2.0f, 1.0f);
         viewport = new FitViewport(game.WIDTH, game.HEIGHT, camera);
 
         // load textures
@@ -156,7 +165,7 @@ public class MainGameScreen implements Screen {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
-        //        hudCamera.update();
+        hudCamera.update();
         camera.update();
         game.batch.setProjectionMatrix(camera.combined);
 
@@ -193,7 +202,7 @@ public class MainGameScreen implements Screen {
         drawAndUpdateShots(playerTank, delta);
 
         // Draw HUD
-//        game.font.draw(game.batch, "FPS: " + Gdx.graphics.getFramesPerSecond(), 16, hudCamera.viewportHeight - 16);
+        game.font.draw(game.batch, "FPS: " + Gdx.graphics.getFramesPerSecond(), 16, hudCamera.viewportHeight - 16);
 
         // Check collisions
         evaluateCollisions();
@@ -373,7 +382,7 @@ public class MainGameScreen implements Screen {
     private void handlePlayerInput(float delta) {
         if (playerTank.isDead()) return;
 
-        float currentAngle = playerTank.getTankAngle();
+        float currentAngle = playerTank.getOrientation();
         float rotationRate = playerTank.getRotationSpeed();
 
         if (timeSincePaused > 1 && Gdx.input.isKeyPressed(Input.Keys.ESCAPE)) {
@@ -392,7 +401,7 @@ public class MainGameScreen implements Screen {
                 finalAngle = 360;
             }
 
-            playerTank.setTankAngle(finalAngle);
+            playerTank.setOrientation(finalAngle);
 
         } else if (Gdx.input.isKeyPressed(Input.Keys.D) || controller.isRightPressed()) {
 
@@ -405,12 +414,12 @@ public class MainGameScreen implements Screen {
                 finalAngle = 360;
             }
 
-            playerTank.setTankAngle(finalAngle);
+            playerTank.setOrientation(finalAngle);
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.W) || controller.isUpPressed()) {
-            float newPosX = playerTank.getPositionX() - playerTank.getSpeed() * MathUtils.sinDeg(-playerTank.getTankAngle()) * delta;
-            float newPosY = playerTank.getPositionY() - playerTank.getSpeed() * MathUtils.cosDeg(-playerTank.getTankAngle()) * delta;
+            float newPosX = playerTank.getPositionX() - playerTank.getSpeed() * MathUtils.sinDeg(-playerTank.getOrientation()) * delta;
+            float newPosY = playerTank.getPositionY() - playerTank.getSpeed() * MathUtils.cosDeg(-playerTank.getOrientation()) * delta;
 
             collisionBox.set(
                     newPosX,
@@ -428,8 +437,8 @@ public class MainGameScreen implements Screen {
 
             if (!isPathBlocked) {
                 playerTank.updatePosition(newPosX, newPosY);
-                
-                playerTank.leaveTracks();
+
+                playerTank.leaveTracks(false);
 
                 if (!engineSound.isPlaying()) {
                     engineSound.play();
@@ -437,8 +446,8 @@ public class MainGameScreen implements Screen {
             }
 
         } else if (Gdx.input.isKeyPressed(Input.Keys.S) || controller.isDownPressed()) {
-            float newPosX = playerTank.getPositionX() + playerTank.getReverseSpeed() * MathUtils.sinDeg(-playerTank.getTankAngle()) * delta;
-            float newPosY = playerTank.getPositionY() + playerTank.getReverseSpeed() * MathUtils.cosDeg(-playerTank.getTankAngle()) * delta;
+            float newPosX = playerTank.getPositionX() + playerTank.getReverseSpeed() * MathUtils.sinDeg(-playerTank.getOrientation()) * delta;
+            float newPosY = playerTank.getPositionY() + playerTank.getReverseSpeed() * MathUtils.cosDeg(-playerTank.getOrientation()) * delta;
 
             collisionBox.set(
                     newPosX,
@@ -456,6 +465,8 @@ public class MainGameScreen implements Screen {
 
             if (!isPathBlocked) {
                 playerTank.updatePosition(newPosX, newPosY);
+
+                playerTank.leaveTracks(true);
 
                 if (!engineSound.isPlaying()) {
                     engineSound.play();
@@ -477,7 +488,7 @@ public class MainGameScreen implements Screen {
             playerTank.setPositionY(game.HEIGHT - playerTank.getWidth());
         }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.SPACE) || Gdx.input.isTouched()) {
+        if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
             // Create new shots
             if (playerTank.canFire()) {
                 ShakeEffect.shakeIt(3f, .1f);
@@ -491,8 +502,8 @@ public class MainGameScreen implements Screen {
     public void resize(int width, int height) {
         controller.resize(width, height);
         viewport.update(width, height, true);
-//        game.batch.setProjectionMatrix(hudCamera.combined);
-//        game.batch.setProjectionMatrix(camera.combined);
+        game.batch.setProjectionMatrix(hudCamera.combined);
+        game.batch.setProjectionMatrix(camera.combined);
     }
 
     @Override

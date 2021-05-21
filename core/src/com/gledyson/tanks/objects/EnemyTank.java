@@ -1,4 +1,4 @@
-package com.gledyson.tanks;
+package com.gledyson.tanks.objects;
 
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -12,8 +12,8 @@ public class EnemyTank extends Tank {
 
     @Override
     public void fire(Tank tank, Sound shotSound) {
-        float xOffset = MathUtils.sinDeg(-tank.getTankAngle()) * (tank.getWidth() / 2);
-        float yOffset = MathUtils.cosDeg(-tank.getTankAngle()) * (tank.getHeight() / 2);
+        float xOffset = MathUtils.sinDeg(-tank.getOrientation()) * (tank.getWidth() / 2);
+        float yOffset = MathUtils.cosDeg(-tank.getOrientation()) * (tank.getHeight() / 2);
 
         Shot newShot = new Shot(
                 tank.getPositionX() + (tank.getWidth() / 2) - xOffset,
@@ -22,7 +22,7 @@ public class EnemyTank extends Tank {
                 tank.getShotTexture(),
                 tank.getShotSpeed(),
                 tank.getShotRate(),
-                tank.getTankAngle() + 180
+                tank.getOrientation() + 180
         );
 
         tank.getShots().add(newShot);

@@ -1,6 +1,7 @@
-package com.gledyson.tanks;
+package com.gledyson.tanks.objects;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.gledyson.tanks.TanksGame;
 
 public class TestBackground {
     private TextureRegion backgroundTexture;

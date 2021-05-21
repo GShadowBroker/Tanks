@@ -1,4 +1,4 @@
-package com.gledyson.tanks;
+package com.gledyson.tanks.objects;
 
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -6,14 +6,13 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
+import com.gledyson.tanks.effects.TrackPrint;
 
-public abstract class Tank {
+public abstract class Tank extends SteerableObject {
     // Position and size
-    private float shotWidth, shotHeight;
-    private float tankAngle;
-
-    // BoundingBox
-    private final Rectangle boundingBox;
+    private final float shotWidth;
+    private final float shotHeight;
+    private float orientationDeg;
 
     // Texture
     private final TextureRegion tankTexture;
@@ -33,8 +32,10 @@ public abstract class Tank {
 
     // Characteristics
     private final float speed = 64;
-    private final float rotationSpeed = 150;
+    private final float rotationSpeed = 128;
     private final float reverseSpeed = this.speed / 2;
+    private static final float TRAVEL_LENGTH_CONSTANT = 64;
+
     private final int armor = 500;
     private int health = 800;
     private boolean dead = false;
@@ -50,11 +51,15 @@ public abstract class Tank {
             float shotWidth, float shotHeight,
             float shotSpeed, float shotRate
     ) {
-        boundingBox = new Rectangle(centerX - (width / 2.0f), centerY - (height / 2.0f), width, height);
+        super(
+                new Rectangle(centerX - (width / 2.0f), centerY - (height / 2.0f), width, height),
+                angle * MathUtils.degreesToRadians
+        );
+
         this.tankTexture = tankTexture;
         this.tankDestroyedTexture = tankDestroyedTexture;
         this.tracksTexture = tracksTexture;
-        this.tankAngle = angle;
+        this.orientationDeg = angle;
 
         // tracks
         this.tracks = new Array<>();
@@ -74,16 +79,12 @@ public abstract class Tank {
     }
 
     public void updatePosition(float x, float y) {
-        boundingBox.setX(x);
-        boundingBox.setY(y);
+        setPositionX(x);
+        setPositionY(y);
     }
 
     public boolean canFire() {
         return (elapsedTimeSinceLastShot - shotRate >= 0);
-    }
-
-    public Rectangle getBoundingBox() {
-        return boundingBox;
     }
 
     public void draw(SpriteBatch batch) {
@@ -94,7 +95,7 @@ public abstract class Tank {
                     boundingBox.width / 2, boundingBox.height / 2,
                     boundingBox.width, boundingBox.height,
                     1, 1,
-                    tankAngle
+                    orientationDeg
             );
         } else {
             batch.draw(
@@ -103,15 +104,15 @@ public abstract class Tank {
                     boundingBox.width / 2, boundingBox.height / 2,
                     boundingBox.width, boundingBox.height,
                     1, 1,
-                    tankAngle
+                    orientationDeg
             );
         }
     }
 
     public void fire(Tank tank, Sound shotSound) {
 
-        float xOffset = MathUtils.sinDeg(-tank.getTankAngle()) * (tank.getWidth() / 2);
-        float yOffset = MathUtils.cosDeg(-tank.getTankAngle()) * (tank.getHeight() / 2);
+        float xOffset = MathUtils.sin(-tank.getOrientation()) * (tank.getWidth() / 2);
+        float yOffset = MathUtils.cos(-tank.getOrientation()) * (tank.getHeight() / 2);
 
         Shot newShot = new Shot(
                 boundingBox.x + (boundingBox.width / 2) - xOffset,
@@ -120,7 +121,7 @@ public abstract class Tank {
                 shotTexture,
                 shotSpeed,
                 shotRate,
-                tankAngle + 180
+                orientationDeg + 180
         );
 
         shots.add(newShot);
@@ -130,12 +131,19 @@ public abstract class Tank {
         elapsedTimeSinceLastShot = 0f;
     }
 
-    public void leaveTracks() {
-        if (timeSinceLastTrackAdded < 1f) return;
+    public void leaveTracks(boolean inReverse) {
+        float interval;
+        if (inReverse) {
+            interval = TRAVEL_LENGTH_CONSTANT / reverseSpeed;
+        } else {
+            interval = TRAVEL_LENGTH_CONSTANT / speed;
+        }
+
+        if (timeSinceLastTrackAdded < interval) return;
         tracks.add(new TrackPrint(
                 tracksTexture,
                 boundingBox.x, boundingBox.y,
-                tankAngle
+                orientationDeg
         ));
         timeSinceLastTrackAdded = 0f;
     }
@@ -159,38 +167,6 @@ public abstract class Tank {
 
     }
 
-    public float getPositionX() {
-        return boundingBox.x;
-    }
-
-    public void setPositionX(float positionX) {
-        boundingBox.x = positionX;
-    }
-
-    public float getPositionY() {
-        return boundingBox.y;
-    }
-
-    public void setPositionY(float positionY) {
-        boundingBox.y = positionY;
-    }
-
-    public float getHeight() {
-        return boundingBox.height;
-    }
-
-    public void setHeight(float height) {
-        boundingBox.height = height;
-    }
-
-    public float getWidth() {
-        return boundingBox.width;
-    }
-
-    public void setWidth(float width) {
-        boundingBox.width = width;
-    }
-
     public float getShotWidth() {
         return shotWidth;
     }
@@ -203,12 +179,12 @@ public abstract class Tank {
         return shots;
     }
 
-    public float getTankAngle() {
-        return tankAngle;
+    public float getOrientation() {
+        return orientationDeg;
     }
 
-    public void setTankAngle(float tankAngle) {
-        this.tankAngle = tankAngle;
+    public void setOrientation(float orientation) {
+        this.orientationDeg = orientation;
     }
 
     public float getSpeed() {
@@ -246,4 +222,5 @@ public abstract class Tank {
     public Array<TrackPrint> getTracks() {
         return tracks;
     }
+
 }

@@ -1,4 +1,4 @@
-package com.gledyson.tanks;
+package com.gledyson.tanks.effects;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
