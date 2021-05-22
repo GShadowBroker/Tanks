@@ -2,24 +2,28 @@ package com.gledyson.tanks.effects;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
+import com.gledyson.tanks.objects.BaseEntity;
 
-public class TrackPrint {
+public class TrackPrint extends BaseEntity {
     private final TextureRegion tracksTexture;
 
     // position and size
-    private final float posX, posY, angle;
     private static final float width = 37;
     private static final float height = 52;
 
     // timers
     private float lifetime;
-    private final float maxDuration = 5f;
+    private final float maxDuration = 4f;
 
     public TrackPrint(TextureRegion texture, float posX, float posY, float angle) {
+        super(
+                new Rectangle(posX, posY, width, height),
+                angle * MathUtils.degreesToRadians
+        );
+
         this.tracksTexture = texture;
-        this.posX = posX;
-        this.posY = posY;
-        this.angle = angle;
         this.lifetime = 0f;
     }
 
@@ -29,11 +33,11 @@ public class TrackPrint {
 
     public void draw(SpriteBatch batch) {
         batch.draw(tracksTexture,
-                posX, posY,
-                width / 2, height / 2,
-                width, height,
+                getPositionX(), getPositionY(),
+                getWidth() / 2, getHeight() / 2,
+                getWidth(), getHeight(),
                 1, 1,
-                angle
+                orientation * MathUtils.radiansToDegrees
         );
     }
 

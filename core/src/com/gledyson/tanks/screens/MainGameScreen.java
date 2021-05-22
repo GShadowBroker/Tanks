@@ -15,15 +15,15 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.gledyson.tanks.effects.ShakeEffect;
 import com.gledyson.tanks.TanksGame;
-import com.gledyson.tanks.objects.TestBackground;
 import com.gledyson.tanks.effects.Explosion;
+import com.gledyson.tanks.effects.ShakeEffect;
 import com.gledyson.tanks.effects.TrackPrint;
 import com.gledyson.tanks.objects.EnemyTank;
 import com.gledyson.tanks.objects.PlayerTank;
 import com.gledyson.tanks.objects.Shot;
 import com.gledyson.tanks.objects.Tank;
+import com.gledyson.tanks.objects.TestBackground;
 
 import java.util.Iterator;
 
@@ -236,7 +236,8 @@ public class MainGameScreen implements Screen {
                 shotTexture,
                 tracksTexture,
                 21, 38,
-                800, 4.0f
+                800, 4.0f,
+                playerTank
         ));
     }
 
@@ -245,9 +246,9 @@ public class MainGameScreen implements Screen {
             enemyTank.update(delta);
             enemyTank.draw(game.batch);
 
-//            if (!enemyTank.isDead() && enemyTank.canFire()) {
-//                enemyTank.fire(enemyTank, shotSound);
-//            }
+            if (!enemyTank.isDead() && enemyTank.canFire()) {
+                enemyTank.fire(enemyTank, shotSound);
+            }
 
             drawAndUpdateShots(enemyTank, delta);
         }
@@ -339,6 +340,7 @@ public class MainGameScreen implements Screen {
                     shot.getPositionY()
             ));
         }
+        // TODO fix out of bounds bug
         iterator.remove(); // removes the shot after hit
     }
 
@@ -382,9 +384,6 @@ public class MainGameScreen implements Screen {
     private void handlePlayerInput(float delta) {
         if (playerTank.isDead()) return;
 
-        float currentAngle = playerTank.getOrientation();
-        float rotationRate = playerTank.getRotationSpeed();
-
         if (timeSincePaused > 1 && Gdx.input.isKeyPressed(Input.Keys.ESCAPE)) {
             timeSincePaused = 0;
             game.setScreen(new PauseScreen(game, this));
@@ -393,33 +392,33 @@ public class MainGameScreen implements Screen {
         if (Gdx.input.isKeyPressed(Input.Keys.A) || controller.isLeftPressed()) {
 
             // clockwise
-            float finalAngle = currentAngle + rotationRate * delta;
+            float finalAngle = playerTank.getOrientation() * MathUtils.radiansToDegrees + playerTank.getRotationSpeed() * delta;
 
-            if (finalAngle > 360) {
+            if (finalAngle >= 360) {
                 finalAngle = 0;
             } else if (finalAngle < 0) {
                 finalAngle = 360;
             }
 
-            playerTank.setOrientation(finalAngle);
+            playerTank.setOrientation(finalAngle * MathUtils.degreesToRadians);
 
         } else if (Gdx.input.isKeyPressed(Input.Keys.D) || controller.isRightPressed()) {
 
             // counter-clockwise
-            float finalAngle = currentAngle - rotationRate * delta;
+            float finalAngle = playerTank.getOrientation() * MathUtils.radiansToDegrees - playerTank.getRotationSpeed() * delta;
 
-            if (finalAngle > 360) {
+            if (finalAngle >= 360) {
                 finalAngle = 0;
             } else if (finalAngle < 0) {
                 finalAngle = 360;
             }
 
-            playerTank.setOrientation(finalAngle);
+            playerTank.setOrientation(finalAngle * MathUtils.degreesToRadians);
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.W) || controller.isUpPressed()) {
-            float newPosX = playerTank.getPositionX() - playerTank.getSpeed() * MathUtils.sinDeg(-playerTank.getOrientation()) * delta;
-            float newPosY = playerTank.getPositionY() - playerTank.getSpeed() * MathUtils.cosDeg(-playerTank.getOrientation()) * delta;
+            float newPosX = playerTank.getPositionX() - playerTank.getSpeed() * MathUtils.sinDeg(-playerTank.getOrientation() * MathUtils.radiansToDegrees) * delta;
+            float newPosY = playerTank.getPositionY() - playerTank.getSpeed() * MathUtils.cosDeg(-playerTank.getOrientation() * MathUtils.radiansToDegrees) * delta;
 
             collisionBox.set(
                     newPosX,
@@ -446,8 +445,8 @@ public class MainGameScreen implements Screen {
             }
 
         } else if (Gdx.input.isKeyPressed(Input.Keys.S) || controller.isDownPressed()) {
-            float newPosX = playerTank.getPositionX() + playerTank.getReverseSpeed() * MathUtils.sinDeg(-playerTank.getOrientation()) * delta;
-            float newPosY = playerTank.getPositionY() + playerTank.getReverseSpeed() * MathUtils.cosDeg(-playerTank.getOrientation()) * delta;
+            float newPosX = playerTank.getPositionX() + playerTank.getReverseSpeed() * MathUtils.sinDeg(-playerTank.getOrientation() * MathUtils.radiansToDegrees) * delta;
+            float newPosY = playerTank.getPositionY() + playerTank.getReverseSpeed() * MathUtils.cosDeg(-playerTank.getOrientation() * MathUtils.radiansToDegrees) * delta;
 
             collisionBox.set(
                     newPosX,

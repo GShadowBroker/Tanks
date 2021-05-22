@@ -1,89 +1,107 @@
 package com.gledyson.tanks.objects;
 
 import com.badlogic.gdx.ai.steer.Steerable;
+import com.badlogic.gdx.ai.steer.SteeringAcceleration;
+import com.badlogic.gdx.ai.steer.SteeringBehavior;
 import com.badlogic.gdx.ai.utils.Location;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
 public class SteerableObject extends BaseEntity implements Steerable<Vector2> {
+    protected Vector2 linearVelocity;
+    protected float angularVelocity;
+    protected float boundingRadius = (getWidth() + getHeight()) / 4f;
+    protected boolean tagged = true;
+    protected boolean independentFacing = false;
+    protected float zeroLinearSpeedThreshold;
+    protected float maxLinearSpeed = 64;
+    protected float maxAngularSpeed = 128;
+    protected float maxLinearAcceleration = 32;
+    protected float maxAngularAcceleration = 32;
+
+    protected SteeringBehavior<Vector2> steeringBehavior;
+    protected SteeringAcceleration<Vector2> steeringOutput =
+            new SteeringAcceleration<>(new Vector2());
 
     public SteerableObject(Rectangle boundingBox, float orientation) {
         super(boundingBox, orientation);
+
+        this.linearVelocity = new Vector2();
     }
 
     @Override
     public Vector2 getLinearVelocity() {
-        return null;
+        return linearVelocity;
     }
 
     @Override
     public float getAngularVelocity() {
-        return 0;
+        return angularVelocity;
     }
 
     @Override
     public float getBoundingRadius() {
-        return 0;
+        return boundingRadius;
     }
 
     @Override
     public boolean isTagged() {
-        return false;
+        return tagged;
     }
 
     @Override
     public void setTagged(boolean tagged) {
-
+        this.tagged = tagged;
     }
 
     @Override
     public float getZeroLinearSpeedThreshold() {
-        return 0;
+        return zeroLinearSpeedThreshold;
     }
 
     @Override
     public void setZeroLinearSpeedThreshold(float value) {
-
+        this.zeroLinearSpeedThreshold = value;
     }
 
     @Override
     public float getMaxLinearSpeed() {
-        return 0;
+        return maxLinearSpeed;
     }
 
     @Override
     public void setMaxLinearSpeed(float maxLinearSpeed) {
-
+        this.maxLinearSpeed = maxLinearSpeed;
     }
 
     @Override
     public float getMaxLinearAcceleration() {
-        return 0;
+        return maxLinearAcceleration;
     }
 
     @Override
     public void setMaxLinearAcceleration(float maxLinearAcceleration) {
-
+        this.maxLinearAcceleration = maxLinearAcceleration;
     }
 
     @Override
     public float getMaxAngularSpeed() {
-        return 0;
+        return maxAngularSpeed;
     }
 
     @Override
     public void setMaxAngularSpeed(float maxAngularSpeed) {
-
+        this.maxAngularSpeed = maxAngularSpeed;
     }
 
     @Override
     public float getMaxAngularAcceleration() {
-        return 0;
+        return maxAngularAcceleration;
     }
 
     @Override
     public void setMaxAngularAcceleration(float maxAngularAcceleration) {
-
+        this.maxAngularAcceleration = maxAngularAcceleration;
     }
 
     @Override
@@ -98,8 +116,16 @@ public class SteerableObject extends BaseEntity implements Steerable<Vector2> {
         return outVector;
     }
 
+    public static float calculateOrientationFromLinearVelocity(Steerable<Vector2> character) {
+        // If we haven't got any velocity, then we can do nothing.
+        if (character.getLinearVelocity().isZero(character.getZeroLinearSpeedThreshold())) {
+            return character.getOrientation();
+        }
+        return character.vectorToAngle(character.getLinearVelocity());
+    }
+
     @Override
     public Location<Vector2> newLocation() {
-        return null;
+        return this;
     }
 }

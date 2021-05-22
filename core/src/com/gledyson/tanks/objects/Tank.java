@@ -12,7 +12,6 @@ public abstract class Tank extends SteerableObject {
     // Position and size
     private final float shotWidth;
     private final float shotHeight;
-    private float orientationDeg;
 
     // Texture
     private final TextureRegion tankTexture;
@@ -31,11 +30,7 @@ public abstract class Tank extends SteerableObject {
     private float elapsedTimeSinceLastShot;
 
     // Characteristics
-    private final float speed = 64;
-    private final float rotationSpeed = 128;
-    private final float reverseSpeed = this.speed / 2;
     private static final float TRAVEL_LENGTH_CONSTANT = 64;
-
     private final int armor = 500;
     private int health = 800;
     private boolean dead = false;
@@ -59,7 +54,6 @@ public abstract class Tank extends SteerableObject {
         this.tankTexture = tankTexture;
         this.tankDestroyedTexture = tankDestroyedTexture;
         this.tracksTexture = tracksTexture;
-        this.orientationDeg = angle;
 
         // tracks
         this.tracks = new Array<>();
@@ -91,28 +85,28 @@ public abstract class Tank extends SteerableObject {
         if (dead) {
             batch.draw(
                     tankDestroyedTexture,
-                    boundingBox.x, boundingBox.y,
-                    boundingBox.width / 2, boundingBox.height / 2,
-                    boundingBox.width, boundingBox.height,
+                    getPositionX(), getPositionY(),
+                    getWidth() / 2, getHeight() / 2,
+                    getWidth(), getHeight(),
                     1, 1,
-                    orientationDeg
+                    getOrientation() * MathUtils.radiansToDegrees
             );
         } else {
             batch.draw(
                     tankTexture,
-                    boundingBox.x, boundingBox.y,
-                    boundingBox.width / 2, boundingBox.height / 2,
-                    boundingBox.width, boundingBox.height,
+                    getPositionX(), getPositionY(),
+                    getWidth() / 2, getHeight() / 2,
+                    getWidth(), getHeight(),
                     1, 1,
-                    orientationDeg
+                    getOrientation() * MathUtils.radiansToDegrees
             );
         }
     }
 
     public void fire(Tank tank, Sound shotSound) {
 
-        float xOffset = MathUtils.sin(-tank.getOrientation()) * (tank.getWidth() / 2);
-        float yOffset = MathUtils.cos(-tank.getOrientation()) * (tank.getHeight() / 2);
+        float xOffset = MathUtils.sin(-tank.getOrientation() * MathUtils.radiansToDegrees) * (tank.getWidth() / 2);
+        float yOffset = MathUtils.cos(-tank.getOrientation() * MathUtils.radiansToDegrees) * (tank.getHeight() / 2);
 
         Shot newShot = new Shot(
                 boundingBox.x + (boundingBox.width / 2) - xOffset,
@@ -121,7 +115,7 @@ public abstract class Tank extends SteerableObject {
                 shotTexture,
                 shotSpeed,
                 shotRate,
-                orientationDeg + 180
+                getOrientation() * MathUtils.radiansToDegrees + 180
         );
 
         shots.add(newShot);
@@ -132,18 +126,25 @@ public abstract class Tank extends SteerableObject {
     }
 
     public void leaveTracks(boolean inReverse) {
+
+        for (TrackPrint trackprint : tracks) {
+            if (boundingBox.overlaps(trackprint.boundingBox)) {
+                return;
+            }
+        }
+
         float interval;
         if (inReverse) {
-            interval = TRAVEL_LENGTH_CONSTANT / reverseSpeed;
+            interval = TRAVEL_LENGTH_CONSTANT / getReverseSpeed();
         } else {
-            interval = TRAVEL_LENGTH_CONSTANT / speed;
+            interval = TRAVEL_LENGTH_CONSTANT / getSpeed();
         }
 
         if (timeSinceLastTrackAdded < interval) return;
         tracks.add(new TrackPrint(
                 tracksTexture,
                 boundingBox.x, boundingBox.y,
-                orientationDeg
+                getOrientation() * MathUtils.radiansToDegrees
         ));
         timeSinceLastTrackAdded = 0f;
     }
@@ -179,24 +180,16 @@ public abstract class Tank extends SteerableObject {
         return shots;
     }
 
-    public float getOrientation() {
-        return orientationDeg;
-    }
-
-    public void setOrientation(float orientation) {
-        this.orientationDeg = orientation;
-    }
-
     public float getSpeed() {
-        return speed;
+        return maxLinearSpeed;
     }
 
     public float getRotationSpeed() {
-        return rotationSpeed;
+        return maxAngularSpeed;
     }
 
     public float getReverseSpeed() {
-        return reverseSpeed;
+        return maxLinearSpeed / 2;
     }
 
     public TextureRegion getShotTexture() {
@@ -211,8 +204,20 @@ public abstract class Tank extends SteerableObject {
         return shotRate;
     }
 
-    public void setElapsedTimeSinceLastShot(float elapsedTimeSinceLastShot) {
-        this.elapsedTimeSinceLastShot = elapsedTimeSinceLastShot;
+    protected float getElapsedTimeSinceLastShot() {
+        return elapsedTimeSinceLastShot;
+    }
+
+    public void setElapsedTimeSinceLastShot(float value) {
+        this.elapsedTimeSinceLastShot = value;
+    }
+
+    protected float getTimeSinceLastTrackAdded() {
+        return timeSinceLastTrackAdded;
+    }
+
+    protected void setTimeSinceLastTrackAdded(float timeSinceLastTrackAdded) {
+        this.timeSinceLastTrackAdded = timeSinceLastTrackAdded;
     }
 
     public boolean isDead() {
@@ -223,4 +228,11 @@ public abstract class Tank extends SteerableObject {
         return tracks;
     }
 
+    public TextureRegion getTankTexture() {
+        return tankTexture;
+    }
+
+    public TextureRegion getTankDestroyedTexture() {
+        return tankDestroyedTexture;
+    }
 }

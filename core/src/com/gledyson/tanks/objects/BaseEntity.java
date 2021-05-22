@@ -41,11 +41,11 @@ public class BaseEntity {
     }
 
     public float getPositionX() {
-        return boundingBox.x;
+        return position.x;
     }
 
     public float getPositionY() {
-        return boundingBox.y;
+        return position.y;
     }
 
     public float getHeight() {

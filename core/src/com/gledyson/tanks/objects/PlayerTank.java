@@ -12,8 +12,8 @@ public class PlayerTank extends Tank {
 
     @Override
     public void fire(Tank tank, Sound shotSound) {
-        float xOffset = MathUtils.sinDeg(-tank.getOrientation()) * (tank.getWidth() / 2);
-        float yOffset = MathUtils.cosDeg(-tank.getOrientation()) * (tank.getHeight() / 2);
+        float xOffset = MathUtils.sinDeg(-tank.getOrientation() * MathUtils.radiansToDegrees) * (tank.getWidth() / 2);
+        float yOffset = MathUtils.cosDeg(-tank.getOrientation() * MathUtils.radiansToDegrees) * (tank.getHeight() / 2);
 
         Shot newShot = new Shot(
                 tank.getPositionX() + (tank.getWidth() / 2) - xOffset,
@@ -22,7 +22,7 @@ public class PlayerTank extends Tank {
                 tank.getShotTexture(),
                 tank.getShotSpeed(),
                 tank.getShotRate(),
-                tank.getOrientation() + 180
+                tank.getOrientation() * MathUtils.radiansToDegrees + 180
         );
 
         tank.getShots().add(newShot);
